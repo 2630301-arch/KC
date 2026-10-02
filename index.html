@@ -408,56 +408,63 @@ scene.add(hero);
 
 // 게임의 플레이어 충돌/물리 위치는 기존 P를 그대로 사용하고,
 // 화면에 보이는 캐릭터만 외부 3D 모델로 교체한다.
-const marioModelRoot=new T.Group();
-body.add(marioModelRoot);
-
-// DAE는 Z-up 모델이므로 Three.js에서 불러온 뒤 게임 좌표계에 맞춰 회전한다.
-```js
 const colladaLoader = new T.ColladaLoader();
 
-fetch('./mario.dae')
-  .then(response => {
-    if (!response.ok) {
-      throw new Error('mario.dae를 불러오지 못했습니다.');
-    }
-    return response.text();
-  })
-  .then(data => {
-    colladaLoader.parse(data, './', res => {
-      const model = res.scene;
+colladaLoader.load(
+  './mario.dae',
 
-      model.rotation.x = -Math.PI / 2;
-      model.rotation.y = Math.PI;
-      model.position.set(0, 0, 0);
+  function(res) {
+    const model = res.scene;
 
-      // 모델 크기를 게임 캐릭터 높이 약 2.2로 맞춤
-      const box = new T.Box3().setFromObject(model);
-      const size = new T.Vector3();
+    model.rotation.x = -Math.PI / 2;
+    model.rotation.y = Math.PI;
+    model.position.set(0, 0, 0);
 
-      box.getSize(size);
+    // 크기 맞추기
+    const box = new T.Box3().setFromObject(model);
+    const size = new T.Vector3();
+    box.getSize(size);
 
-      const targetHeight = 2.2;
-      const h = Math.max(size.x, size.y, size.z);
-      const scale = h > 0 ? targetHeight / h : 1;
+    const targetHeight = 2.2;
+    const h = Math.max(size.x, size.y, size.z);
+    const scale = h > 0 ? targetHeight / h : 1;
 
-      model.scale.setScalar(scale);
+    model.scale.setScalar(scale);
 
-      model.traverse(o => {
-        if (o.isMesh) {
-          o.castShadow = true;
-          o.receiveShadow = true;
+    model.traverse(function(o) {
+      if (o.isMesh) {
+        o.castShadow = true;
+        o.receiveShadow = true;
 
-          if (o.material) {
-            const mats = Array.isArray(o.material)
-              ? o.material
-              : [o.material];
+        if (o.material) {
+          const mats = Array.isArray(o.material)
+            ? o.material
+            : [o.material];
 
-            mats.forEach(m => {
-              m.side = T.FrontSide;
-            });
-          }
+          mats.forEach(function(m) {
+            m.side = T.DoubleSide;
+          });
         }
-      });
+      }
+    });
+
+    marioModelRoot.add(model);
+
+    // 발을 지면에 맞추기
+    const fitted = new T.Box3().setFromObject(model);
+    model.position.y -= fitted.min.y;
+
+    console.log('Mario 모델 로드 성공');
+    say('3D 캐릭터 모델 로드 완료');
+  },
+
+  undefined,
+
+  function(error) {
+    console.error('Mario DAE 로딩 실패:', error);
+    say('캐릭터 모델 로딩 실패');
+  }
+);
 
       marioModelRoot.add(model);
 
