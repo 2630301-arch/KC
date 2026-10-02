@@ -413,7 +413,7 @@ body.add(marioModelRoot);
 
 // DAE는 Z-up 모델이므로 Three.js에서 불러온 뒤 게임 좌표계에 맞춰 회전한다.
 const colladaLoader=new T.ColladaLoader();
-colladaLoader.parse(MARIO_DAE, '', res=>{
+fetch('./mario.dae')   .then(response => {     if (!response.ok) throw new Error('mario.dae를 불러오지 못했습니다.');     return response.text();   })   .then(data => {     colladaLoader.parse(data, './', res=>{
   const model=res.scene;
   model.rotation.x=-Math.PI/2;
   model.rotation.y=Math.PI;
